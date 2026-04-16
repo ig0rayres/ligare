@@ -15,6 +15,7 @@ import {
   Heart,
   Shield,
   Smartphone,
+  BarChart3,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Kids", href: "/dashboard/kids", icon: Baby },
   { name: "Células", href: "/dashboard/cells", icon: Heart },
   { name: "Cultos & Eventos", href: "/dashboard/events", icon: Calendar },
+  { name: "Financeiro", href: "/dashboard/finance", icon: BarChart3 },
   { name: "Follow-up", href: "/dashboard/followup", icon: MessageCircle },
   { name: "Configurações", href: "/dashboard/settings", icon: Settings },
   { name: "WhatsApp", href: "/dashboard/settings/whatsapp", icon: Smartphone },
@@ -197,13 +199,13 @@ export default function DashboardLayout({
             
             // RBAC Filtering
             if (profile?.role === 'leader') {
-              if (['Membros', 'Kids', 'Configurações', 'Células', 'WhatsApp'].includes(item.name)) return null;
+              if (['Membros', 'Kids', 'Configurações', 'Células', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
             if (profile?.role === 'kids_team') {
-              if (['Follow-up', 'Configurações', 'Células', 'WhatsApp'].includes(item.name)) return null;
+              if (['Follow-up', 'Configurações', 'Células', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
             if (profile?.role === 'member') {
-              if (['Configurações', 'WhatsApp'].includes(item.name)) return null;
+              if (['Configurações', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
 
             const isActive = pathname?.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard');

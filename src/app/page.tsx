@@ -123,7 +123,7 @@ export default function HomePage() {
                     { icon: Baby, label: "Kids Check-in", value: "23 crianças", color: "var(--lg-care)" },
                     { icon: Users, label: "Membros Ativos", value: "347 pessoas", color: "var(--lg-primary)" },
                     { icon: MessageCircle, label: "Follow-ups", value: "12 pendentes", color: "#F59E0B" },
-                    { icon: BarChart3, label: "Presença", value: "89% hoje", color: "var(--lg-care)" },
+                    { icon: BarChart3, label: "Gestão Financeira", value: "R$ 4.2k hoje", color: "var(--lg-care)" },
                     { icon: Bell, label: "Notificações", value: "5 novas", color: "var(--lg-primary)" },
                     { icon: Search, label: "Células", value: "18 ativas", color: "#8B5CF6" },
                   ].map((item, i) => (
@@ -153,7 +153,7 @@ export default function HomePage() {
               className="text-3xl md:text-4xl font-bold text-lg-midnight"
               style={{ fontFamily: "var(--lg-font-heading)" }}
             >
-              Três pilares que transformam a gestão da sua igreja
+              Os pilares que transformam a gestão da sua igreja
             </h2>
             <p className="mt-4 text-lg-text-secondary text-lg">
               Cada módulo foi desenhado para resolver uma dor real da liderança
@@ -161,7 +161,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 stagger-children">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
             {/* Pillar 1: Kids */}
             <div className="card p-8 hover:shadow-lg transition-all group">
               <div
@@ -240,6 +240,35 @@ export default function HomePage() {
                 {["Canal único oficial", "Inbox centralizado", "Líder sem número exposto", "Templates pré-aprovados"].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-lg-text-secondary">
                     <Check className="w-4 h-4 text-lg-midnight shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* Pillar 4: Financeiro */}
+            <div className="card p-8 hover:shadow-lg transition-all group">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110"
+                style={{ background: "rgba(245, 158, 11, 0.1)" }}
+              >
+                <BarChart3 className="w-7 h-7 text-[#F59E0B]" />
+              </div>
+              <h3
+                className="text-xl font-bold text-lg-midnight mb-3"
+                style={{ fontFamily: "var(--lg-font-heading)" }}
+              >
+                Gestão Financeira
+              </h3>
+              <p className="text-lg-text-secondary leading-relaxed mb-4">
+                Transparência total com fluxo de caixa, controle fiscal, relatórios
+                mensais e capacidade de lançar receitas de cultos ou avulsas com
+                dupla validação (Dízimos e Ofertas).
+              </p>
+              <ul className="space-y-2">
+                {["Lançamentos de Culto ou Avulsos", "Verificação Dupla (Tesoureiro)", "Dashboard de Transparência", "Upload Seguro de Comprovantes"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-lg-text-secondary">
+                    <Check className="w-4 h-4 text-[#F59E0B] shrink-0" />
                     {item}
                   </li>
                 ))}

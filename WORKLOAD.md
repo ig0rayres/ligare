@@ -1,5 +1,8 @@
 # Workload & Changelog: Ligare Plataforma
 
+> **🔑 INFRAESTRUTURA AVISO:** 
+> O projeto Supabase do Ligare (ID: `jqofecfrqppsemupwjbm`) está vinculado à conta de e-mail **igor@dothouse.com.br**. Se houverem problemas de acesso, verifique este e-mail.
+
 Este documento registra todas as sessões de trabalho, horas investidas e as entregas técnicas/negócio realizadas no projeto Ligare.
 
 ---
