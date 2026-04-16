@@ -1,0 +1,301 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lg-primary: var(--lg-primary);
+  --color-lg-primary-light: var(--lg-primary-light);
+  --color-lg-primary-dark: var(--lg-primary-dark);
+  --color-lg-secondary: var(--lg-secondary);
+  --color-lg-secondary-light: var(--lg-secondary-light);
+  --color-lg-midnight: var(--lg-midnight);
+  --color-lg-bridge: var(--lg-bridge);
+  --color-lg-care: var(--lg-care);
+  --color-lg-cloud: var(--lg-cloud);
+  --color-lg-mist: var(--lg-mist);
+  --color-lg-slate: var(--lg-slate);
+  --color-lg-surface: var(--lg-surface);
+  --color-lg-surface-raised: var(--lg-surface-raised);
+  --color-lg-surface-overlay: var(--lg-surface-overlay);
+  --color-lg-border: var(--lg-border);
+  --color-lg-border-light: var(--lg-border-light);
+  --color-lg-text: var(--lg-text);
+  --color-lg-text-secondary: var(--lg-text-secondary);
+  --color-lg-text-muted: var(--lg-text-muted);
+  --color-lg-text-inverse: var(--lg-text-inverse);
+  --color-lg-success: var(--lg-success);
+  --color-lg-warning: var(--lg-warning);
+  --color-lg-danger: var(--lg-danger);
+  --color-lg-info: var(--lg-info);
+  
+  --font-heading: var(--lg-font-heading);
+  --font-body: var(--lg-font-body);
+}
+
+/* ========================================================================
+   LIGARE DESIGN SYSTEM
+   Platform: Church Care & Connection SaaS
+   White Label: CSS Custom Properties driven by Supabase tenant config
+
+   ARCHITECTURE:
+   - :root = Custom CSS properties (never conflict with Tailwind internals)
+   - @layer base = Foundation styles (lower priority than Tailwind utilities)
+   - @layer components = Component classes (lower priority than utilities)
+   - Tailwind utilities always win when applied to elements
+   ======================================================================== */
+
+/* --- Design Tokens (White Label ready) ---
+   Prefix: --lg- (Ligare) to avoid any namespace collision */
+@layer base {
+  :root {
+    /* White Label — inject from Supabase tenant config */
+    --lg-primary: var(--wl-primary, #1F6FEB);
+    --lg-primary-light: var(--wl-primary-light, #E8F0FF);
+    --lg-primary-dark: var(--wl-primary-dark, #1557bd);
+    --lg-secondary: var(--wl-secondary, #18B37E);
+    --lg-secondary-light: var(--wl-secondary-light, #d1fae5);
+
+    /* Foundation Palette */
+    --lg-midnight: #0F172A;
+    --lg-bridge: #1F6FEB;
+    --lg-care: #18B37E;
+    --lg-cloud: #F8FAFC;
+    --lg-mist: #E8F0FF;
+    --lg-slate: #475569;
+
+    /* Surfaces */
+    --lg-surface: #FFFFFF;
+    --lg-surface-raised: #F8FAFC;
+    --lg-surface-overlay: rgba(15, 23, 42, 0.6);
+    --lg-border: #E2E8F0;
+    --lg-border-light: #F1F5F9;
+
+    /* Text */
+    --lg-text: #0F172A;
+    --lg-text-secondary: #475569;
+    --lg-text-muted: #94A3B8;
+    --lg-text-inverse: #FFFFFF;
+
+    /* Status */
+    --lg-success: #18B37E;
+    --lg-warning: #F59E0B;
+    --lg-danger: #EF4444;
+    --lg-info: #1F6FEB;
+
+    /* Typography */
+    --lg-font-heading: 'Manrope', system-ui, sans-serif;
+    --lg-font-body: 'Inter', system-ui, sans-serif;
+
+    /* Radii */
+    --lg-radius-sm: 6px;
+    --lg-radius-md: 10px;
+    --lg-radius-lg: 16px;
+    --lg-radius-xl: 24px;
+    --lg-radius-full: 9999px;
+
+    /* Shadows */
+    --lg-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --lg-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --lg-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --lg-shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.12);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--lg-font-body);
+    color: var(--lg-text);
+    background-color: var(--lg-cloud);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--lg-font-heading);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--lg-midnight);
+  }
+}
+
+/* ========================================================================
+   COMPONENT CLASSES
+   Inside @layer components so Tailwind utilities can still override them
+   ======================================================================== */
+@layer components {
+  /* Card */
+  .card {
+    background: var(--lg-surface);
+    border: 1px solid var(--lg-border-light);
+    border-radius: var(--lg-radius-lg);
+    box-shadow: var(--lg-shadow-sm);
+    transition: box-shadow 250ms ease, transform 250ms ease;
+  }
+  .card:hover {
+    box-shadow: var(--lg-shadow-md);
+  }
+
+  /* Button Base */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--lg-font-body);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border-radius: var(--lg-radius-md);
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    transition: all 150ms ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: var(--lg-primary);
+    color: var(--lg-text-inverse);
+  }
+  .btn-primary:hover {
+    background: var(--lg-primary-dark);
+    box-shadow: 0 4px 16px rgba(31, 111, 235, 0.3);
+  }
+
+  .btn-secondary {
+    background: var(--lg-primary-light);
+    color: var(--lg-primary);
+  }
+  .btn-secondary:hover {
+    background: #dce6f9;
+  }
+
+  .btn-success {
+    background: var(--lg-success);
+    color: var(--lg-text-inverse);
+  }
+  .btn-success:hover {
+    background: #15a06f;
+  }
+
+  .btn-danger {
+    background: var(--lg-danger);
+    color: var(--lg-text-inverse);
+  }
+  .btn-danger:hover {
+    background: #dc2626;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--lg-text-secondary);
+    border: 1px solid var(--lg-border);
+  }
+  .btn-ghost:hover {
+    background: var(--lg-surface-raised);
+    border-color: var(--lg-primary);
+    color: var(--lg-primary);
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+  }
+
+  .btn-lg {
+    padding: 16px 32px;
+    font-size: 1.0625rem;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--lg-radius-full);
+  }
+  .badge-primary { background: var(--lg-primary-light); color: var(--lg-primary); }
+  .badge-success { background: var(--lg-secondary-light); color: var(--lg-success); }
+  .badge-warning { background: #fef3c7; color: #d97706; }
+  .badge-danger { background: #fee2e2; color: var(--lg-danger); }
+
+  /* Input */
+  .input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: var(--lg-font-body);
+    font-size: 0.9375rem;
+    border: 1px solid var(--lg-border);
+    border-radius: var(--lg-radius-md);
+    background: var(--lg-surface);
+    color: var(--lg-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    outline: none;
+  }
+  .input:focus {
+    border-color: var(--lg-primary);
+    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.12);
+  }
+  .input::placeholder {
+    color: var(--lg-text-muted);
+  }
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 1.5s ease-in-out infinite;
+  }
+
+  /* Stagger children */
+  .stagger-children > * {
+    opacity: 0;
+    animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+  .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+}
+
+/* Keyframes (outside layers — keyframes are always global) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
