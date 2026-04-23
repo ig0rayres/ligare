@@ -215,7 +215,7 @@ export default function DashboardLayout({
 
         {/* Nav */}
         <nav className="p-3 space-y-1 flex-1">
-          {!profile?.is_platform_admin && navigation.map((item) => {
+          {(!profile?.is_platform_admin || isImpersonating) && navigation.map((item) => {
             
             // RBAC Filtering
             if (profile?.role === 'leader') {
@@ -254,7 +254,7 @@ export default function DashboardLayout({
         </nav>
 
         {/* Master Admin Link — Only for platform admins */}
-        {profile?.is_platform_admin && (
+        {(profile?.is_platform_admin && !isImpersonating) && (
           <div className="px-3 mt-2">
             <Link
               href="/dashboard/master-admin"
@@ -265,7 +265,7 @@ export default function DashboardLayout({
               }`}
             >
               <Shield className="w-[18px] h-[18px]" />
-              Master Admin
+              Painel Master Admin
             </Link>
           </div>
         )}
