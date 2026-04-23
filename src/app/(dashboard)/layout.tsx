@@ -23,6 +23,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Toaster } from "sonner";
 import { leaveImpersonate } from "@/app/(dashboard)/dashboard/master-admin/actions";
+import { revalidatePath } from "next/cache";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -101,7 +102,7 @@ export default function DashboardLayout({
       }
     }
     loadProfile();
-  }, []);
+  }, [pathname]);
 
   const initials = profile?.full_name
     ?.split(" ")

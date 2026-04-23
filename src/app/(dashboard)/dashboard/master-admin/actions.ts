@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
+import { revalidatePath } from "next/cache"
 
 export async function impersonateTenant(churchId: string) {
   const supabase = await createClient()
@@ -51,6 +52,8 @@ export async function impersonateTenant(churchId: string) {
     .update({ church_id: churchId })
     .eq("id", user.id)
 
+  revalidatePath("/", "layout")
+  
   // Redirect into normal dashboard scope (now viewing as Tenant)
   redirect("/dashboard")
 }
@@ -74,5 +77,6 @@ export async function leaveImpersonate() {
   cookieStore.delete("lg_original_church_id")
   cookieStore.delete("lg_is_impersonating")
   
+  revalidatePath("/", "layout")
   redirect("/dashboard/master-admin")
 }
