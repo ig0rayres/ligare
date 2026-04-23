@@ -16,6 +16,9 @@ import {
   Shield,
   Smartphone,
   BarChart3,
+  Building2,
+  Package,
+  Boxes,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -254,20 +257,31 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        {/* Master Admin Link — Only for platform admins */}
+        {/* Master Admin Navigation — Only for platform admins not impersonating */}
         {(profile?.is_platform_admin && !isImpersonating) && (
-          <div className="px-3 mt-2">
-            <Link
-              href="/dashboard/master-admin"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                pathname === "/dashboard/master-admin"
-                  ? "bg-lg-midnight text-white"
-                  : "text-lg-text-muted hover:bg-lg-surface-raised hover:text-lg-midnight"
-              }`}
-            >
-              <Shield className="w-[18px] h-[18px]" />
-              Painel Master Admin
-            </Link>
+          <div className="px-3 mt-2 space-y-1">
+            <p className="px-3 text-[10px] uppercase tracking-widest text-lg-text-muted font-semibold mb-2">Master Admin</p>
+            {[
+              { name: "Painel", href: "/dashboard/master-admin", icon: Shield },
+              { name: "Tenants", href: "/dashboard/master-admin/tenants", icon: Building2 },
+              { name: "Planos", href: "/dashboard/master-admin/plans", icon: Package },
+            ].map((item) => {
+              const isActive = pathname === item.href || (item.href !== "/dashboard/master-admin" && pathname?.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-lg-midnight text-white"
+                      : "text-lg-text-muted hover:bg-lg-surface-raised hover:text-lg-midnight"
+                  }`}
+                >
+                  <item.icon className="w-[18px] h-[18px]" />
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
         )}
 
