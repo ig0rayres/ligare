@@ -216,7 +216,7 @@ export default function DashboardLayout({
 
         {/* Nav */}
         <nav className="p-3 space-y-1 flex-1">
-          {(!profile?.is_platform_admin || isImpersonating) && navigation.map((item) => {
+          {navigation.map((item) => {
             
             // RBAC Filtering
             if (profile?.role === 'leader') {
