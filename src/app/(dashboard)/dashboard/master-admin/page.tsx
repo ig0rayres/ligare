@@ -13,7 +13,9 @@ import {
   Baby,
   DollarSign,
   BarChart3,
+  LogOut,
 } from "lucide-react";
+import { impersonateTenant } from "./actions";
 
 // Plan pricing for MRR calculation
 const planPrices: Record<string, number> = {
@@ -370,6 +372,9 @@ export default async function MasterAdminPage() {
                   <th className="px-5 py-3 text-left text-xs font-semibold text-lg-text-muted uppercase tracking-wider">
                     Criada em
                   </th>
+                  <th className="px-5 py-3 text-center text-xs font-semibold text-lg-text-muted uppercase tracking-wider">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--lg-border-light)]">
@@ -433,6 +438,17 @@ export default async function MasterAdminPage() {
                       </td>
                       <td className="px-5 py-4 text-sm text-lg-text-muted">
                         {new Date(church.created_at).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <form action={impersonateTenant.bind(null, church.id)}>
+                          <button
+                            type="submit"
+                            title="Assumir Tenant e Ver Dashboard"
+                            className="flex items-center gap-2 px-3 py-1.5 mx-auto bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-medium"
+                          >
+                            Entrar <LogOut className="w-3.5 h-3.5 transform rotate-180" />
+                          </button>
+                        </form>
                       </td>
                     </tr>
                   );

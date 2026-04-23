@@ -2,43 +2,50 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+export default function UpdatePasswordPage() {
   const router = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("As senhas informadas não coincidem.");
+      return;
+    }
+    if (password.length < 6) {
+        setError("A senha deve conter ao menos 6 caracteres.");
+        return;
+    }
+
     setError(null);
     setIsLoading(true);
 
     try {
       const supabase = createClient();
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      
+      // Quando o usuário clica no link do e-mail, o Supabase passa na URL 
+      // os tokens de reset e converte pra Session via callback, permitindo o updateUser:
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
       });
 
-      if (signInError) {
-        if (signInError.message === "Invalid login credentials") {
-          throw new Error("E-mail ou senha incorretos.");
-        }
-        throw signInError;
+      if (updateError) {
+        throw new Error(updateError.message);
       }
-
+      
       router.push("/dashboard");
       router.refresh();
+      
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro inesperado. Tente novamente.";
+      const message = err instanceof Error ? err.message : "Falha ao definir nova senha. O link pode ter expirado.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -47,7 +54,6 @@ export default function LoginPage() {
 
   return (
     <div className="animate-fade-in">
-      {/* Logo */}
       <div className="text-center mb-8">
         <Image
           src="/brand/ligare-brasao.png"
@@ -60,14 +66,13 @@ export default function LoginPage() {
           className="text-2xl font-bold text-lg-midnight"
           style={{ fontFamily: "var(--lg-font-heading)" }}
         >
-          Entrar no Ligare
+          Nova Senha
         </h1>
         <p className="text-sm text-lg-text-muted mt-1">
-          Acesse sua conta e continue cuidando
+          Defina sua nova senha de acesso ao sistema
         </p>
       </div>
 
-      {/* Form */}
       <div className="card p-8">
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -77,31 +82,12 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-lg-text-secondary mb-1.5">
-              E-mail
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lg-text-muted" />
-              <input
-                id="email"
-                type="email"
-                required
-                placeholder="seu@email.com"
-                className="input pl-10"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-lg-text-secondary mb-1.5">
-              Senha
+            <label className="block text-sm font-medium text-lg-text-secondary mb-1.5">
+              Nova Senha
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lg-text-muted" />
               <input
-                id="password"
                 type={showPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
@@ -112,24 +98,28 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-lg-text-muted hover:text-lg-text-secondary transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-lg-text-muted hover:text-lg-text-secondary"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-[var(--lg-border)] text-lg-primary focus:ring-lg-primary"
-              />
-              <span className="text-lg-text-secondary">Lembrar-me</span>
+          <div>
+            <label className="block text-sm font-medium text-lg-text-secondary mb-1.5">
+              Confirmar Nova Senha
             </label>
-            <a href="/forgot-password" className="text-lg-primary hover:underline font-medium">
-              Esqueceu a senha?
-            </a>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lg-text-muted" />
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="••••••••"
+                className="input pl-10 pr-10"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
           </div>
 
           <button
@@ -138,24 +128,15 @@ export default function LoginPage() {
             className="btn btn-primary w-full btn-lg mt-2"
           >
             {isLoading ? (
-              <span className="animate-pulse-soft">Entrando...</span>
+              <span className="animate-pulse-soft">Salvando...</span>
             ) : (
               <>
-                Entrar
-                <ArrowRight className="w-4 h-4" />
+                Redefinir e Entrar
+                <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-lg-text-muted">
-            Não tem uma conta?{" "}
-            <a href="/register" className="text-lg-primary font-semibold hover:underline">
-              Criar conta
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );

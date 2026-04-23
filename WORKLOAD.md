@@ -120,27 +120,29 @@ Este documento registra todas as sessões de trabalho, horas investidas e as ent
 - **Isolamento Multi-Tenant:** Cada Igreja tem sua própria instância WAHA na Hello Paco, identificada por `church_id` como `external_device_id`.
 - **Segurança:** Token Bearer da Hello Paco nunca sai do servidor Next.js — frontend sempre consome o proxy interno.
 
+## Sessão: 16 de Abril de 2026
+**Duração Estimada:** 3 Horas  
+**Foco:** Arquitetura Multi-Tenant Isolada, Subdomínios e Onboarding Autônomo White Label
+
+### O que foi entregue hoje:
+- [x] **Infraestrutura Wildcard (Middleware):** Implementação de roteamento avançado no `middleware.ts` do Next.js. Isolamento total por subdomínio (ex: `[subdominio].ligare.app`).
+- [x] **Acesso Seguro via Raiz:** Bloqueio de renderizações indevidas pela raiz do subdomínio: acesso à `/` agora redireciona forçadamente para `/login` de forma nativa e sem quebras do Edge Runtime.
+- [x] **Onboarding Autônomo e Descentralizado:** Criação das telas dinâmicas `[domain]/register` e `[domain]/login`. Cada página agora consome dinamicamente a `logo_url`, `primary_color` e `secondary_color` respectiva da igreja dona do subdomínio.
+- [x] **Segurança (RPC DB):** Autoria e update da Stored Procedure `public.register_tenant_member` no Supabase para rodar com `SECURITY DEFINER`, acoplando o usuário logado perfeitamente ao `church_id` extraído do banco e bypassando as restrições RLS.
+- [x] **Módulo Fiscal (Preparação Asaas):** Extensão da tabela `profiles` com a coluna fiscal `cpf`. Incorporação do dado com máscara React e validação de algoritmo nativo no `/register`. Todo membro comum agora possui CPF formatado salvo direto no banco.
+
 ---
 
-## 🚀 PONTO DE PARTIDA — Sessão de 15 de Abril de 2026
+## 🚀 PONTO DE PARTIDA — Próxima Sessão (17 de Abril de 2026)
 
 > ⚠️ **LEIA ISSO PRIMEIRO amanhã antes de qualquer ação.**
 
-### Pré-requisito: Configurar as chaves reais no `.env.local`
-
-As seguintes variáveis estão com valores placeholder e precisam ser substituídas pelas chaves reais antes de testar:
-
-```env
-ASAAS_API_URL=https://sandbox.asaas.com/api/v3        ← trocar para produção quando pronto
-ASAAS_API_KEY=YOUR_ASAAS_KEY_HERE                      ← INSERIR CHAVE REAL DO ASAAS
-ASAAS_WEBHOOK_SECRET=YOUR_WEBHOOK_SECRET_HERE          ← INSERIR TOKEN DO WEBHOOK ASAAS
-NEXT_PUBLIC_APP_URL=https://app.ligare.com.br          ← confirmar URL de produção
-```
+### Foco Total no Fluxo de Comunicação e Testes!
+Amanhã o dia é dedicado a validar e consolidar o core de engajamento do projeto.
 
 ### Tarefas de Amanhã (por prioridade):
-
-- [ ] 1. **Configurar Asaas:** Inserir a chave real da conta Asaas (sandbox ou produção) no `.env.local`. Registrar o webhook `/api/asaas/webhook` no painel do Asaas com o token secreto.
-- [ ] 2. **Teste E2E do Fluxo Completo:** Simular compra PIX no Asaas Sandbox → disparar webhook manualmente → verificar se `features.hp_instance_id` aparece na tabela `subscriptions` → confirmar exibição do QR Code na tela.
-- [ ] 3. **Botão "Chamar Responsável" (Kids):** Conectar o botão existente no check-in ao serviço de WhatsApp — ao clicar, envia mensagem via instância WAHA da igreja para o responsável cadastrado.
-- [ ] 4. **Dashboard Dinâmico:** Substituir dados estáticos do Dashboard principal por queries reais ao Supabase (crianças hoje, check-ins, membros ativos).
-- [ ] 5. **Hub Público da Igreja:** Página pública (`/public/[slug]`) com cadastro de visitante, encontre célula, fale com a igreja.
+- [ ] 1. **Testing Completo do WhatsApp (Hello Paco):** Configuração final e end-to-end de testes do fluxo do WhatsApp acoplado à plataforma Hello Paco. Geração do QR Code e emissão de instâncias autônomas.
+- [ ] 2. **Fluxos Táticos de Notificação Kids:** Encadeamento do fluxo de "Chamar Responsável" do painel de Kids Check-in -> WhatsApp disparado pela instância WAHA isolada do tenant.
+- [ ] 3. **Mensageria Automática & Follow-up:** Testar envio de mensagens transacionais pós-checkin.
+- [ ] 4. **Teste E2E de Billing (Asaas):** Testar contratação real simulada do canal via Sandbox Asaas via PIX.
+- [ ] 5. **Validação das Páginas Públicas (Hub da Igreja):** Consumação da interface pública (Encontrar Células) usando o novo design system enxugado pelo CPF do visitante.

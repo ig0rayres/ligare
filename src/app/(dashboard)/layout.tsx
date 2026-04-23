@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Toaster } from "sonner";
+import { leaveImpersonate } from "@/app/(dashboard)/dashboard/master-admin/actions";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -54,6 +55,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -93,6 +95,10 @@ export default function DashboardLayout({
         logo_url: church?.logo_url || null,
         cell_term: church?.cell_term || "Células",
       });
+
+      if (typeof window !== "undefined") {
+        setIsImpersonating(document.cookie.includes("lg_is_impersonating=true"));
+      }
     }
     loadProfile();
   }, []);
@@ -132,6 +138,20 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-lg-cloud" style={themeStyles}>
       <Toaster position="top-right" richColors />
+
+      {/* Impersonation Banner */}
+      {isImpersonating && (
+        <div className="bg-lg-danger z-[60] relative text-white py-2 px-4 shadow flex items-center justify-center gap-4 text-sm font-semibold">
+          <Shield className="w-5 h-5 text-white/90" />
+          VOCÊ ESTÁ ATUANDO COMO A IGREJA: {profile?.church_name}
+          <form action={leaveImpersonate} className="ml-4">
+             <button type="submit" className="bg-white/20 hover:bg-white/30 text-white rounded px-3 py-1 transition-colors text-xs">
+                Sair e Voltar ao Master Admin
+             </button>
+          </form>
+        </div>
+      )}
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -269,7 +289,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <div className="lg:pl-64">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-lg border-b border-[var(--lg-border-light)] flex items-center justify-between px-6">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-lg border-b border-[var(--lg-border-light)] flex items-center justify-between px-6 transition-all" style={{ top: isImpersonating ? '44px' : '0' }}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-lg-text-secondary"
