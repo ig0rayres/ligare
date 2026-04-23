@@ -878,10 +878,15 @@ A proposta não é ser apenas um app institucional, mas uma **plataforma operaci
 
 ### 18.2. Master Admin (`/dashboard/master-admin`)
 - ✅ Verificação `is_platform_admin`
-- ✅ Métricas SaaS (total igrejas, trials, pagos)
-- ✅ Tabela de tenants com plano/status/expiração
-- ⬜ Impersonation (planejado)
-- ⬜ Dashboard financeiro MRR (planejado)
+- ✅ Métricas SaaS reais (MRR, total igrejas, trials, distribuição de planos)
+- ✅ Top igrejas por membros com botão de impersonação rápida
+- ✅ **Impersonation completa:** Entrar/sair de tenant, tarja vermelha, cookies httpOnly, sidebar dinâmica
+- ✅ **Tenants (`/master-admin/tenants`):** Tabela filtrada, KPIs, modal de detalhes, impersonação
+- ✅ **Planos & Addons (`/master-admin/plans`):** Cards de planos, aba de addons, drawer de composição com buffet, descontos, trial e grace period — CRUD completo
+- ✅ **Sidebar B2B:** Menu expandido com seção "Master Admin" (Painel / Tenants / Planos)
+- ⬜ Billing Global (histórico de faturas Asaas consolidadas)
+- ⬜ Sincronização automática com Asaas (criar plano espelhando via API)
+- ⬜ Soft-locks de quota atingida nas igrejas
 
 ### 18.3. Gestão de Membros (`/dashboard/membros`)
 - ✅ CRUD completo de membros
@@ -921,23 +926,37 @@ A proposta não é ser apenas um app institucional, mas uma **plataforma operaci
 |--------|-----------|
 | Frontend | Next.js 15 (App Router) |
 | UI | CSS Variables + Glassmorphism + Lucide Icons |
-| Auth | Supabase Auth (email/senha) |
+| Auth | Supabase Auth (email/senha + recuperação de senha) |
 | Database | PostgreSQL (Supabase) com RLS |
 | Storage | Supabase Storage (bucket `kids`) |
-| Deploy | Em definição |
+| Deploy | EasyPanel (ligare.app) |
+| Billing | Asaas (PIX + Cartão de Crédito) |
+| WhatsApp | Hello Paco B2B (WAHA instances) |
 
 ### 18.7. Schema do Banco (Tabelas Principais)
 | Tabela | Descrição |
 |--------|-----------|
 | `churches` | Igrejas (tenants) |
-| `profiles` | Perfis de usuários |
-| `subscriptions` | Assinaturas e planos |
+| `profiles` | Perfis de usuários (flag `is_platform_admin`) |
+| `subscriptions` | Assinaturas e planos (com `plan_id` FK dinâmica) |
+| `platform_plans` | Planos dinâmicos com preços, descontos, trial e grace period |
+| `platform_addons` | Catálogo de 10 módulos/addons da plataforma |
+| `plans_addons_link` | Composição N:N (buffet): qual plano inclui quais addons e em que quantidade (-1=ilimitado) |
+| `tenant_addons` | Instâncias de addons contratadas por cada igreja (N canais WhatsApp, etc.) |
 | `church_members` | Membros da igreja |
 | `church_roles` | Roles customizáveis |
 | `member_roles` | Associação membro ↔ role |
 | `kids_children` | Crianças cadastradas |
 | `kids_guardians` | Responsáveis vinculados |
 | `kids_classrooms` | Salas do Kids |
-| `kids_checkins` | Check-ins (preparado) |
+| `kids_checkins` | Check-ins |
 | `kids_schedules` | Escalas do Kids |
 | `kids_schedule_staff` | Equipe por escala |
+
+### 18.8. Convenções do Billing
+- **`-1` = Ilimitado** em qualquer campo de quantidade (`included_quantity`, `quantity`)
+- **`0` = Não incluso** no plano
+- **`N > 0` = Quota fixa** inclusa no plano
+- **Canais (WhatsApp, Instagram, Widget)** são `volume_limit`: podem ser contratados múltiplas vezes por igreja via `tenant_addons`
+- **Features (ex: IA avançada)** são `feature_toggle`: on/off por plano, sem quantidade
+

@@ -133,16 +133,76 @@ Este documento registra todas as sessões de trabalho, horas investidas e as ent
 
 ---
 
-## 🚀 PONTO DE PARTIDA — Próxima Sessão (17 de Abril de 2026)
+---
 
-> ⚠️ **LEIA ISSO PRIMEIRO amanhã antes de qualquer ação.**
+## Sessão: 23 de Abril de 2026
+**Duração Estimada:** 6 Horas
+**Foco:** Autenticação End-to-End, Impersonação de Tenants, Master Admin Expandido (Tenants + Planos + Addons)
 
-### Foco Total no Fluxo de Comunicação e Testes!
-Amanhã o dia é dedicado a validar e consolidar o core de engajamento do projeto.
+### O que foi entregue hoje:
 
-### Tarefas de Amanhã (por prioridade):
-- [ ] 1. **Testing Completo do WhatsApp (Hello Paco):** Configuração final e end-to-end de testes do fluxo do WhatsApp acoplado à plataforma Hello Paco. Geração do QR Code e emissão de instâncias autônomas.
-- [ ] 2. **Fluxos Táticos de Notificação Kids:** Encadeamento do fluxo de "Chamar Responsável" do painel de Kids Check-in -> WhatsApp disparado pela instância WAHA isolada do tenant.
-- [ ] 3. **Mensageria Automática & Follow-up:** Testar envio de mensagens transacionais pós-checkin.
-- [ ] 4. **Teste E2E de Billing (Asaas):** Testar contratação real simulada do canal via Sandbox Asaas via PIX.
-- [ ] 5. **Validação das Páginas Públicas (Hub da Igreja):** Consumação da interface pública (Encontrar Células) usando o novo design system enxugado pelo CPF do visitante.
+#### 🔐 Autenticação & Recuperação de Senha
+- [x] **Recuperação de senha (`/forgot-password`):** Formulário funcional com envio de e-mail via `supabase.auth.resetPasswordForEmail()`.
+- [x] **Redefinição de senha (`/update-password`):** Formulário funcional com processamento via `supabase.auth.updateUser()`.
+- [x] **Link no Login:** Botão "Esqueceu a senha?" atualizado para apontar para `/forgot-password`.
+
+#### 🕵️ Impersonação de Tenants (Master Admin)
+- [x] **Server Action `impersonateTenant`:** Valida `is_platform_admin`, salva `church_id` original em cookie httpOnly (`lg_original_church_id`), altera `profiles.church_id` do Master Admin para o Tenant desejado como bypass de RLS.
+- [x] **Server Action `leaveImpersonate`:** Restaura o `church_id` original do Master Admin e limpa os cookies.
+- [x] **Cookie de estado `lg_is_impersonating`:** Cookie não-httpOnly para detecção client-side do estado de disfarce.
+- [x] **Tarja vermelha superior:** Barra de aviso vermelha fixa no topo do layout com o nome da Igreja atual e botão de saída imediata.
+- [x] **Cache invalidation:** `revalidatePath("/", "layout")` nas duas actions para destruir o cache do Next.js e forçar rerenderização total da sidebar.
+- [x] **Fix redirect loop:** Dashboard detecta `isImpersonating` e não redireciona Master Admin de volta ao `/master-admin` quando em modo de disfarce.
+- [x] **Fix sidebar RBAC:** Menu lateral exibe itens do Tenant (Membros, Kids, Células) apenas quando `isImpersonating === true`; exibe menus B2B apenas quando fora do disfarce.
+- [x] **useEffect com `pathname`:** Sidebar rerenderiza a cada mudança de rota, corrigindo bug de cache visual.
+
+#### 🏛️ Master Admin — Dashboard Redesign
+- [x] **Dados 100% reais:** MRR dinâmico somando coluna `mrr` das assinaturas, distribuição visual de planos por barra de progresso, status das assinaturas (Ativo/Trial/Inadimplente).
+- [x] **Top Igrejas por Membros:** Ranking das 5 maiores igrejas com avatar, subdomínio, plano e botão "Entrar" (impersonação direta).
+- [x] **Atalhos rápidos:** Links diretos para Tenants e Planos & Addons.
+- [x] **Queries paralelas:** 5 queries simultâneas com `Promise.all` para performance máxima.
+
+#### 🏢 Master Admin — Tenants (`/dashboard/master-admin/tenants`)
+- [x] **Tabela completa:** Lista todas as igrejas com logo, nome, subdomínio, plano (badge colorido), status, MRR, data de expiração e data de cadastro.
+- [x] **KPIs dinâmicos:** 4 cards (Total, MRR Total, Ativos, Em Trial).
+- [x] **Filtros:** Busca por nome/subdomínio/e-mail + filtro por status de assinatura.
+- [x] **Modal lateral de detalhes:** Drawer animado com logo, subdomínio com link externo, dados de assinatura, informações de contato e botão "Entrar como esta Igreja" (impersonação).
+
+#### 📦 Master Admin — Planos & Addons (`/dashboard/master-admin/plans`)
+- [x] **Aba "Planos Base":** Cards dos planos com preço, descontos por ciclo (trim/sem/anual), dias de trial, grace period e preview dos modules include.
+- [x] **Aba "Catálogo de Módulos":** Tabela completa de todos os 10 addons com tipo, preço e status.
+- [x] **Drawer de Composição de Plano:** Modal lateral com edição completa: nome, descrição, preço mensal, descontos trimestrais/semestrais/anuais, trial days, grace period, toggle "Permitir addons no trial", e composição do buffet com campos numéricos por addon (suporte a -1 = ilimitado).
+- [x] **Drawer de Addon:** Modal lateral para criar/editar addons com nome, slug, tipo (volume_limit / feature_toggle), preço unitário e status.
+- [x] **CRUD completo:** Criar, editar e salvar planos e addons diretamente no Supabase via client-side com RLS validado por `is_platform_admin()`.
+
+#### 🗄️ Banco de Dados — Migration 021
+- [x] **Tabela `platform_plans`:** Planos dinâmicos com preço, descontos, trial, grace period, toggle de upgrade no trial e `asaas_plan_id` para sincronização futura.
+- [x] **Tabela `platform_addons`:** Catálogo com 10 addons semeados: Membros, Crianças, Visitantes, Células, Usuários, Eventos, Notificações, Canal WhatsApp (R$ 79,90/unidade), Canal Instagram (R$ 49,90/unidade), Widget de Site (R$ 29,90).
+- [x] **Tabela `plans_addons_link`:** Composição N:N com `included_quantity` (-1 = ilimitado, 0 = não incluso, N = quota fixa). 40 regras semeadas para 4 planos × 10 addons.
+- [x] **Tabela `tenant_addons`:** Instâncias de addons contratadas por igreja (suporte a múltiplos canais WhatsApp por cliente, com `asaas_subscription_id` para controle de cobrança recorrente).
+- [x] **FK em `subscriptions.plan_id`:** Coluna FK adicionada e populada para as assinaturas existentes.
+- [x] **RLS completo:** Políticas de leitura para todos autenticados + escrita restrita a `is_platform_admin()`.
+- [x] **Enum ENUM `addon_type`:** `feature_toggle` e `volume_limit` definidos no schema.
+
+#### 🔗 Sidebar B2B Expandida
+- [x] **Seção "Master Admin":** Label de seção + 3 itens: Painel (Shield), Tenants (Building2), Planos (Package).
+- [x] **Estado ativo:** Link ativo destacado com `bg-lg-midnight text-white`.
+- [x] **Isolamento correto:** Menus B2B ocultos durante impersonação; menus de Tenant ocultos fora de impersonação.
+
+### Convenções Estabelecidas:
+- **`-1` = Ilimitado** em `included_quantity` e `quantity` nas tabelas de billing.
+- **Múltiplos Canais:** Addons do tipo `volume_limit` (WhatsApp, Instagram, Widget) podem ser contratados N vezes por igreja via `tenant_addons.quantity`.
+- **Soft-lock (futura implementação):** Sistema de alertas de cota atingida sem bloqueio hard.
+
+---
+
+## 🚀 PONTO DE PARTIDA — Próxima Sessão (24 de Abril de 2026)
+
+> ⚠️ **LEIA ISSO PRIMEIRO antes de qualquer ação.**
+
+### Tarefas Prioritárias (por ordem):
+- [ ] 1. **Testes E2E do Painel Master Admin:** Validar Tenants, Planos, Addons e Impersonação em produção (ligare.app).
+- [ ] 2. **Billing Global:** Tela `/master-admin/billing` com histórico de todas as faturas Asaas consolidadas, visão de MRR por período e inadimplências.
+- [ ] 3. **Sincronização Asaas:** Ao criar/editar plano no painel, espelhar automaticamente na API Asaas gerando `asaas_plan_id`.
+- [ ] 4. **Soft-locks:** Alertas de quota atingida nos dashboards das igrejas (sem bloqueio abrupto — upsell amigável).
+- [ ] 5. **Testing WhatsApp (Hello Paco):** Fluxo E2E do QR Code e provisionamento de instâncias WAHA.
