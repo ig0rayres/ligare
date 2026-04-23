@@ -36,12 +36,15 @@ const kidsActivity = [
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import LeaderDashboard from "./LeaderDashboard";
 import { getAttendanceReport } from "./leader-actions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const isImpersonating = cookieStore.get("lg_is_impersonating")?.value === "true";
   let profile: any = null;
 
   if (user) {
@@ -53,7 +56,7 @@ export default async function DashboardPage() {
     
     profile = data;
 
-    if (profile?.is_platform_admin) {
+    if (profile?.is_platform_admin && !isImpersonating) {
       redirect("/dashboard/master-admin");
     }
   }
