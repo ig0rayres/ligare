@@ -150,7 +150,7 @@ export async function createWhatsAppCreditCardLink(churchId: string) {
     headers: asaasHeaders(),
     body: JSON.stringify({
       customer: customerId,
-      billingType: "CREDIT_CARD",
+      billingType: "UNDEFINED",
       value: 79.90,
       dueDate: dueDate.toISOString().split("T")[0],
       description: "Canal WhatsApp Oficial — Ligare",
