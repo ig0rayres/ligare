@@ -23,7 +23,7 @@ export default async function TenantsPage() {
   const [churchesRes, subsRes] = await Promise.all([
     supabase
       .from("churches")
-      .select("id, name, subdomain, email, phone, city, state, logo_url, created_at")
+      .select("id, name, subdomain, city, state, logo_url, created_at")
       .order("created_at", { ascending: false }),
     supabase
       .from("subscriptions")
@@ -37,6 +37,8 @@ export default async function TenantsPage() {
     const churchSubs = subs.filter((s) => s.church_id === church.id);
     return {
       ...church,
+      email: null,
+      phone: null,
       subscriptions: churchSubs
     };
   });
