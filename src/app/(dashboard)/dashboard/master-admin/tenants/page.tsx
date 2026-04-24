@@ -20,16 +20,26 @@ export default async function TenantsPage() {
 
   if (!profile?.is_platform_admin) redirect("/dashboard");
 
-  const { data: tenants } = await supabase
-    .from("churches")
-    .select(`
-      id, name, subdomain, email, phone, city, state, logo_url,
-      created_at,
-      subscriptions (
-        plan, status, current_period_end, mrr
-      )
-    `)
-    .order("created_at", { ascending: false });
+  const [churchesRes, subsRes] = await Promise.all([
+    supabase
+      .from("churches")
+      .select("id, name, subdomain, email, phone, city, state, logo_url, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("subscriptions")
+      .select("church_id, plan, status, current_period_end, mrr")
+  ]);
 
-  return <TenantsClient tenants={tenants || []} />;
+  const churches = churchesRes.data || [];
+  const subs = subsRes.data || [];
+
+  const tenants = churches.map((church) => {
+    const churchSubs = subs.filter((s) => s.church_id === church.id);
+    return {
+      ...church,
+      subscriptions: churchSubs
+    };
+  });
+
+  return <TenantsClient tenants={tenants} />;
 }

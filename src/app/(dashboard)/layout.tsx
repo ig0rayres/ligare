@@ -92,28 +92,49 @@ export default function DashboardLayout({
       const isActiveImpersonation = impersonatingFlag && !!impersonatingChurchId && data.is_platform_admin;
       const effectiveChurchId = isActiveImpersonation ? impersonatingChurchId : data.church_id;
 
-      const { data: church } = await supabase
-        .from("churches")
-        .select("name, primary_color, secondary_color, logo_url, cell_term")
-        .eq("id", effectiveChurchId)
-        .single();
+      const isMasterAdminView = data.is_platform_admin && !isActiveImpersonation;
 
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("plan")
-        .eq("church_id", effectiveChurchId)
-        .single();
+      let churchName = "Minha Igreja";
+      let planName = "free";
+      let primaryColor = null;
+      let secondaryColor = null;
+      let logoUrl = null;
+      let cellTerm = "Células";
+
+      if (isMasterAdminView) {
+        churchName = "Ligare Master";
+        planName = "enterprise";
+      } else {
+        const { data: church } = await supabase
+          .from("churches")
+          .select("name, primary_color, secondary_color, logo_url, cell_term")
+          .eq("id", effectiveChurchId)
+          .single();
+
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("plan")
+          .eq("church_id", effectiveChurchId)
+          .single();
+
+        churchName = church?.name || churchName;
+        planName = sub?.plan || planName;
+        primaryColor = church?.primary_color || null;
+        secondaryColor = church?.secondary_color || null;
+        logoUrl = church?.logo_url || null;
+        cellTerm = church?.cell_term || cellTerm;
+      }
 
       setProfile({
         full_name: data.full_name || "Usuário",
         role: data.role || "member",
         is_platform_admin: data.is_platform_admin || false,
-        church_name: church?.name || "Minha Igreja",
-        plan: sub?.plan || "free",
-        primary_color: church?.primary_color || null,
-        secondary_color: church?.secondary_color || null,
-        logo_url: church?.logo_url || null,
-        cell_term: church?.cell_term || "Células",
+        church_name: churchName,
+        plan: planName,
+        primary_color: primaryColor as string | null,
+        secondary_color: secondaryColor as string | null,
+        logo_url: logoUrl as string | null,
+        cell_term: cellTerm,
       });
 
       setIsImpersonating(isActiveImpersonation);
