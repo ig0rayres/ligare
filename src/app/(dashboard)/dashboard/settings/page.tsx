@@ -1,32 +1,21 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ConfigClient from "./ConfigClient";
+import { getServerSession } from "@/lib/session";
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getServerSession();
 
-  if (!user) {
+  if (!session) {
     redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("church_id, is_platform_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !profile.church_id) {
-    redirect("/dashboard");
   }
 
   // TODO: Em projetos reais, checar se a role desse usuário na `church_members` é administrador da igreja.
   // Como simplificação via contexto Ligare, todo usuário logado associado vai poder ver configurações.
 
-  const { data: church } = await supabase
+  const { data: church } = await session.supabase
     .from("churches")
     .select("id, name, logo_url, primary_color, secondary_color, cell_term")
-    .eq("id", profile.church_id)
+    .eq("id", session.churchId)
     .single();
 
   if (!church) {

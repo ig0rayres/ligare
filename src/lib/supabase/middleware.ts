@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
   // Route Protection Logic
   const isAuthRoute = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register';
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  const isMasterAdminRoute = request.nextUrl.pathname.startsWith('/dashboard/master-admin');
 
   if (isDashboardRoute && !user) {
     // Redirect unauthenticated users to login page
@@ -54,6 +55,31 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
+  }
+
+  // ── MASTER ADMIN ROUTE PROTECTION ──
+  // Server-side guard: Only platform admins can access master-admin routes
+  if (isMasterAdminRoute && user) {
+    // Block access if user is currently impersonating (must leave first)
+    const isImpersonating = request.cookies.get("lg_is_impersonating")?.value === "true";
+    if (isImpersonating) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+
+    // Check if user is actually a platform admin
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_platform_admin")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.is_platform_admin) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

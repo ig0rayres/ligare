@@ -5,6 +5,10 @@ import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
+/**
+ * Magic Link Impersonation: Sets secure cookies to view as a tenant.
+ * NO database modifications — purely cookie-based context switching.
+ */
 export async function impersonateTenant(churchId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -13,68 +17,64 @@ export async function impersonateTenant(churchId: string) {
     throw new Error("Não autorizado")
   }
 
-  // Validar se usuário possui flag master
+  // SECURITY: Validate platform admin from the database
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_platform_admin, church_id")
+    .select("is_platform_admin")
     .eq("id", user.id)
     .single()
 
   if (!profile?.is_platform_admin) {
-    throw new Error("Usuário não possui privilégios arquiteturais de Impersonation.")
+    throw new Error("Sem privilégios de Platform Admin.")
+  }
+
+  // Validate that the target church exists
+  const { data: church } = await supabase
+    .from("churches")
+    .select("id, name")
+    .eq("id", churchId)
+    .single()
+
+  if (!church) {
+    throw new Error("Igreja não encontrada.")
   }
 
   const cookieStore = await cookies();
   
-  // Guardamos o church_id nativo dele em cookie seainda não foi setado 
-  // (para n perder original de um double-impersonation)
-  const currentOriginal = cookieStore.get("lg_original_church_id")
-  if (!currentOriginal) {
-    cookieStore.set("lg_original_church_id", profile.church_id || "master", { 
-        path: "/", 
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        maxAge: 60 * 60 * 24 // 1 day
-    })
-  }
-  
-  // Set in cookie that we are impersonating to show the warning banner across UX
-  cookieStore.set("lg_is_impersonating", "true", { 
-      path: "/", 
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 
+  // Set impersonation cookies — NO database changes
+  cookieStore.set("lg_impersonating_church_id", churchId, { 
+    path: "/", 
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: false, // Client layout needs to read this for church context
+    sameSite: "lax",
+    maxAge: 60 * 60 * 8 // 8 hours max — auto-expires for safety
   })
 
-  // Hack Principal: Force Update RLS-Context ChurchID in profiles table
-  await supabase
-    .from("profiles")
-    .update({ church_id: churchId })
-    .eq("id", user.id)
+  cookieStore.set("lg_is_impersonating", "true", { 
+    path: "/", 
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: false, // Client layout needs this for banner
+    sameSite: "lax",
+    maxAge: 60 * 60 * 8
+  })
 
   revalidatePath("/", "layout")
-  
-  // Redirect into normal dashboard scope (now viewing as Tenant)
   redirect("/dashboard")
 }
 
+/**
+ * Leave Impersonation: Clears cookies and returns to Master Admin.
+ * NO database changes needed — just clear the context.
+ */
 export async function leaveImpersonate() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
     
   const cookieStore = await cookies();
-  const originalChurchId = cookieStore.get("lg_original_church_id")?.value
   
-  if (originalChurchId && originalChurchId !== "master") {
-      // Devolve para o Church_ID base do Master Admin
-      await supabase
-        .from("profiles")
-        .update({ church_id: originalChurchId })
-        .eq("id", user.id)
-  }
-
-  cookieStore.delete("lg_original_church_id")
+  // Simply clear impersonation cookies — no DB revert needed
+  cookieStore.delete("lg_impersonating_church_id")
   cookieStore.delete("lg_is_impersonating")
   
   revalidatePath("/", "layout")

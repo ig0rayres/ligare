@@ -2,6 +2,16 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+
+/** Resolve effective church_id (supports impersonation via cookies) */
+async function resolveChurchId(profile: any): Promise<string> {
+  const cookieStore = await cookies();
+  const impersonatingChurchId = cookieStore.get("lg_impersonating_church_id")?.value;
+  const isImpersonating = cookieStore.get("lg_is_impersonating")?.value === "true";
+  if (isImpersonating && impersonatingChurchId && profile.is_platform_admin) return impersonatingChurchId;
+  return profile.church_id;
+}
 
 export async function createEvent(formData: FormData) {
   const supabase = await createClient();
@@ -10,11 +20,13 @@ export async function createEvent(formData: FormData) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("church_id, role")
+    .select("church_id, role, is_platform_admin")
     .eq("id", user.id)
     .single();
 
   if (!profile) throw new Error("Perfil não encontrado");
+
+  const churchId = await resolveChurchId(profile);
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -53,7 +65,7 @@ export async function createEvent(formData: FormData) {
   const parsedStartsAt = new Date(starts_at).toISOString();
 
   const { error } = await supabase.from("events").insert({
-    church_id: profile.church_id,
+    church_id: churchId,
     created_by: user.id,
     title,
     description: description || null,
@@ -135,11 +147,13 @@ export async function notifyEvent(eventId: string, formData: FormData) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("church_id")
+    .select("church_id, is_platform_admin")
     .eq("id", user.id)
     .single();
 
   if (!profile) throw new Error("Perfil não encontrado");
+
+  const churchId = await resolveChurchId(profile);
 
   const message = formData.get("message") as string;
   const notifyApp = formData.get("notifyApp") === "true";
@@ -162,7 +176,7 @@ export async function notifyEvent(eventId: string, formData: FormData) {
   // Se houver uma imagem preenchida, fazemos o upload
   if (imageFile && imageFile.size > 0) {
     const fileExt = imageFile.name.split('.').pop() || 'jpg';
-    const filePath = `notifications/${profile.church_id}/${Date.now()}.${fileExt}`;
+    const filePath = `notifications/${churchId}/${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('event_assets')
@@ -180,7 +194,7 @@ export async function notifyEvent(eventId: string, formData: FormData) {
   }
 
   const { error } = await supabase.from("event_notifications").insert({
-    church_id: profile.church_id,
+    church_id: churchId,
     event_id: eventId,
     sender_id: user.id,
     message,

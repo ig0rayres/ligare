@@ -2,16 +2,30 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+
+/** Resolve effective church_id (supports impersonation via cookies) */
+async function resolveChurchId(supabase: any, userId: string, profile: any): Promise<string> {
+  const cookieStore = await cookies();
+  const impersonatingChurchId = cookieStore.get("lg_impersonating_church_id")?.value;
+  const isImpersonating = cookieStore.get("lg_is_impersonating")?.value === "true";
+  
+  if (isImpersonating && impersonatingChurchId && profile.is_platform_admin) {
+    return impersonatingChurchId;
+  }
+  return profile.church_id;
+}
 
 export async function getChurchRoles() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { data: null, error: "Not logged in" };
 
-  const { data: profile } = await supabase.from("profiles").select("church_id, role").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("church_id, role, is_platform_admin").eq("id", user.id).single();
   if (!profile) return { data: null, error: "Profile not found" };
 
-  const { data: roles, error } = await supabase.from("church_roles").select("*").eq("church_id", profile.church_id).order("name", { ascending: true });
+  const churchId = await resolveChurchId(supabase, user.id, profile);
+  const { data: roles, error } = await supabase.from("church_roles").select("*").eq("church_id", churchId).order("name", { ascending: true });
   return { data: roles, error };
 }
 
@@ -27,7 +41,8 @@ export async function createChurchRole(formData: FormData) {
   const { data: profile } = await supabase.from("profiles").select("church_id, role, is_platform_admin").eq("id", user.id).single();
   if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin' && !profile.is_platform_admin)) throw new Error("Unauthorized");
 
-  const { error } = await supabase.from("church_roles").insert([{ church_id: profile.church_id, name, permissions_level }]);
+  const churchId = await resolveChurchId(supabase, user.id, profile);
+  const { error } = await supabase.from("church_roles").insert([{ church_id: churchId, name, permissions_level }]);
   if (error) {
     if (error.code === '23505') {
       throw new Error(`O encargo '${name}' já existe. Não é possível cadastrar encargos com nomes duplicados.`);
@@ -45,7 +60,8 @@ export async function deleteChurchRole(roleId: string) {
   const { data: profile } = await supabase.from("profiles").select("church_id, role, is_platform_admin").eq("id", user.id).single();
   if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin' && !profile.is_platform_admin)) throw new Error("Unauthorized");
 
-  const { error } = await supabase.from("church_roles").delete().eq("id", roleId).eq("church_id", profile.church_id);
+  const churchId = await resolveChurchId(supabase, user.id, profile);
+  const { error } = await supabase.from("church_roles").delete().eq("id", roleId).eq("church_id", churchId);
   if (error) throw new Error("Failed to delete role");
   revalidatePath("/dashboard/members/roles");
 }
@@ -55,18 +71,20 @@ export async function getMembers() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { data: null, error: "Not logged in" };
 
-  const { data: profile } = await supabase.from("profiles").select("church_id").eq("id", user.id).single();
+  const { data: profile } = await supabase.from("profiles").select("church_id, is_platform_admin").eq("id", user.id).single();
   if (!profile) return { data: null, error: "Profile not found" };
+
+  const churchId = await resolveChurchId(supabase, user.id, profile);
 
   const { data: authMembers, error: err1 } = await supabase
     .from("profiles")
     .select(`id, full_name, email, whatsapp, status, birth_date, is_baptized, avatar_url, church_roles(id, name), leader:profiles!leader_id(id, full_name, avatar_url)`)
-    .eq("church_id", profile.church_id);
+    .eq("church_id", churchId);
 
   const { data: nonAuthMembers, error: err2 } = await supabase
     .from("church_members")
     .select(`id, full_name, email, whatsapp, status, birth_date, is_baptized, avatar_url, church_roles(id, name), leader:profiles!leader_id(id, full_name, avatar_url)`)
-    .eq("church_id", profile.church_id);
+    .eq("church_id", churchId);
 
   if (err1 || err2) return { data: null, error: err1?.message || err2?.message };
 
@@ -86,6 +104,8 @@ export async function createMember(formData: FormData) {
   const { data: profile } = await supabase.from("profiles").select("church_id, role, is_platform_admin").eq("id", user.id).single();
   if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin' && !profile.is_platform_admin)) throw new Error("Unauthorized");
 
+  const churchId = await resolveChurchId(supabase, user.id, profile);
+
   const full_name = formData.get("full_name") as string;
   const email = formData.get("email") as string;
   const whatsapp = formData.get("whatsapp") as string;
@@ -100,7 +120,7 @@ export async function createMember(formData: FormData) {
   let avatar_url = null;
   if (avatarFile && avatarFile.size > 0) {
     const ext = avatarFile.name.split('.').pop();
-    const filePath = `${profile.church_id}/${Date.now()}.${ext}`;
+    const filePath = `${churchId}/${Date.now()}.${ext}`;
     
     const { error: uploadError } = await supabase.storage
       .from("avatars")
@@ -116,7 +136,7 @@ export async function createMember(formData: FormData) {
   }
 
   const { error } = await supabase.from("church_members").insert([{
-    church_id: profile.church_id,
+    church_id: churchId,
     full_name,
     email: email || null,
     whatsapp: whatsapp || null,

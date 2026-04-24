@@ -18,15 +18,12 @@ import {
   BarChart3,
   Building2,
   Package,
-  Boxes,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Toaster } from "sonner";
 import { leaveImpersonate } from "@/app/(dashboard)/dashboard/master-admin/actions";
-import { revalidatePath } from "next/cache";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -50,6 +47,16 @@ interface UserProfile {
   secondary_color: string | null;
   logo_url: string | null;
   cell_term: string;
+}
+
+/** Parse cookies from document.cookie string */
+function parseCookies(): Record<string, string> {
+  if (typeof document === "undefined") return {};
+  return document.cookie.split(';').reduce((acc, c) => {
+    const [key, ...rest] = c.trim().split('=');
+    if (key) acc[key] = rest.join('=');
+    return acc;
+  }, {} as Record<string, string>);
 }
 
 export default function DashboardLayout({
@@ -76,16 +83,25 @@ export default function DashboardLayout({
 
       if (!data) return;
 
+      // ── IMPERSONATION: Read cookies for context ──
+      const cookies = parseCookies();
+      const impersonatingFlag = cookies['lg_is_impersonating'] === 'true';
+      const impersonatingChurchId = cookies['lg_impersonating_church_id'];
+      
+      // Only honor impersonation if user is a verified platform admin
+      const isActiveImpersonation = impersonatingFlag && !!impersonatingChurchId && data.is_platform_admin;
+      const effectiveChurchId = isActiveImpersonation ? impersonatingChurchId : data.church_id;
+
       const { data: church } = await supabase
         .from("churches")
         .select("name, primary_color, secondary_color, logo_url, cell_term")
-        .eq("id", data.church_id)
+        .eq("id", effectiveChurchId)
         .single();
 
       const { data: sub } = await supabase
         .from("subscriptions")
         .select("plan")
-        .eq("church_id", data.church_id)
+        .eq("church_id", effectiveChurchId)
         .single();
 
       setProfile({
@@ -100,9 +116,7 @@ export default function DashboardLayout({
         cell_term: church?.cell_term || "Células",
       });
 
-      if (typeof window !== "undefined") {
-        setIsImpersonating(document.cookie.includes("lg_is_impersonating=true"));
-      }
+      setIsImpersonating(isActiveImpersonation);
     }
     loadProfile();
   }, [pathname]);
@@ -121,6 +135,10 @@ export default function DashboardLayout({
     pro: "Pro",
     enterprise: "Enterprise",
   };
+
+  // ── RBAC: Determine which navigation items to show ──
+  const shouldShowNavigation = !profile?.is_platform_admin || isImpersonating;
+  const shouldShowMasterAdmin = profile?.is_platform_admin && !isImpersonating;
 
   const themeStyles = {
     ...(profile?.primary_color ? { 
@@ -217,24 +235,26 @@ export default function DashboardLayout({
           )}
         </div>
 
-        {/* Nav */}
+        {/* Nav — Church navigation (hidden for platform admin unless impersonating) */}
         <nav className="p-3 space-y-1 flex-1">
-          {(!profile?.is_platform_admin || isImpersonating) && navigation.map((item) => {
+          {shouldShowNavigation && navigation.map((item) => {
             
-            // RBAC Filtering
-            if (profile?.role === 'leader') {
+            // RBAC Filtering based on role
+            const role = isImpersonating ? 'admin' : profile?.role;
+            
+            if (role === 'leader') {
               if (['Membros', 'Kids', 'Configurações', 'Células', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
-            if (profile?.role === 'kids_team') {
+            if (role === 'kids_team') {
               if (['Follow-up', 'Configurações', 'Células', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
-            if (profile?.role === 'member') {
+            if (role === 'member') {
               if (['Configurações', 'WhatsApp', 'Financeiro'].includes(item.name)) return null;
             }
 
             const isActive = pathname?.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard');
             
-            // Applica nomenclaturas dinâmicas
+            // Dynamic nomenclature
             let displayName = item.name;
             if (item.name === 'Células') {
               displayName = profile?.cell_term || 'Células';
@@ -257,8 +277,8 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        {/* Master Admin Navigation — Only for platform admins not impersonating */}
-        {(profile?.is_platform_admin && !isImpersonating) && (
+        {/* Master Admin Navigation — Only for platform admins NOT impersonating */}
+        {shouldShowMasterAdmin && (
           <div className="px-3 mt-2 space-y-1">
             <p className="px-3 text-[10px] uppercase tracking-widest text-lg-text-muted font-semibold mb-2">Master Admin</p>
             {[

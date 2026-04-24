@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { WhatsAppService } from "@/lib/whatsapp/service";
+import { cookies } from "next/headers";
 
 // ========================
 // HELPERS
@@ -15,12 +16,22 @@ async function getProfileChurchId() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("church_id")
+    .select("church_id, is_platform_admin")
     .eq("id", user.id)
     .single();
 
   if (!profile) throw new Error("Perfil não encontrado");
-  return { supabase, user, churchId: profile.church_id };
+
+  // Support impersonation via cookies (no DB changes)
+  const cookieStore = await cookies();
+  const impersonatingChurchId = cookieStore.get("lg_impersonating_church_id")?.value;
+  const isImpersonating = cookieStore.get("lg_is_impersonating")?.value === "true";
+  
+  const churchId = (isImpersonating && impersonatingChurchId && profile.is_platform_admin) 
+    ? impersonatingChurchId 
+    : profile.church_id;
+
+  return { supabase, user, churchId };
 }
 
 async function uploadPhoto(supabase: any, file: File, folder: string): Promise<string | null> {

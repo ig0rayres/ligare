@@ -45,6 +45,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   const cookieStore = await cookies();
   const isImpersonating = cookieStore.get("lg_is_impersonating")?.value === "true";
+  const impersonatingChurchId = cookieStore.get("lg_impersonating_church_id")?.value;
   let profile: any = null;
 
   if (user) {
@@ -58,6 +59,13 @@ export default async function DashboardPage() {
 
     if (profile?.is_platform_admin && !isImpersonating) {
       redirect("/dashboard/master-admin");
+    }
+
+    // When impersonating, use the impersonated church context
+    if (isImpersonating && impersonatingChurchId && profile?.is_platform_admin) {
+      profile.church_id = impersonatingChurchId;
+      // Platform admin impersonating always sees the admin dashboard
+      profile.role = "admin";
     }
   }
 
