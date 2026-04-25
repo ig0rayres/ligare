@@ -194,15 +194,28 @@ Este documento registra todas as sessões de trabalho, horas investidas e as ent
 - **Múltiplos Canais:** Addons do tipo `volume_limit` (WhatsApp, Instagram, Widget) podem ser contratados N vezes por igreja via `tenant_addons.quantity`.
 - **Soft-lock (futura implementação):** Sistema de alertas de cota atingida sem bloqueio hard.
 
+## Sessão: 24 de Abril de 2026
+**Duração Estimada:** 2.5 Horas
+**Foco:** RBAC, Refatoração de Impersonation (Cookie-only) e Correções Master Admin
+
+### O que foi entregue hoje:
+
+#### 🔐 Segurança & RBAC (Role-Based Access Control)
+- [x] **Middleware Global (`middleware.ts`):** Proteção rígida do path `/dashboard/master-admin`, barrando diretamente usuários comuns, forçando 404/Redirecionamento para intrusos.
+- [x] **Impersonation Seguro:** Substituímos o perigoso bypass de alterar a tabela DB `profiles.church_id` por um uso estrito de Cookies temporários `lg_is_impersonating` + `lg_impersonating_church_id` assinado no middleware. O contexto viaja junto ao User Session de forma segura.
+- [x] **Helper `getServerSession()`:** Centralizador de sessão para resolver qual o verdadeiro e qual o aparente `church_id`. Integrado as dezenas de `actions.ts`.
+
+#### 🏛️ Master Admin — Dashboard e Tenants
+- [x] **Layout Fallback (Anti-Tenant Lock):** Corrigido o bug visual do Header/Sidebar que trancava o logo/nome da Master Admin sob o disfarce físico da igreja de testes. `Ligare Master` agora brilha como identidade global no topo!
+- [x] **Tenants Query Fix:** Corrigido o bug fantasma da Tabela de Entidades vazia (`/dashboard/master-admin/tenants`). A Query tentava chamar as colunas extintas `email` e `phone` pela biblioteca Supabase, que travava de forma passiva.
+
 ---
 
-## 🚀 PONTO DE PARTIDA — Próxima Sessão (24 de Abril de 2026)
+## 🚀 PONTO DE PARTIDA — Próxima Sessão (25 de Abril de 2026)
 
 > ⚠️ **LEIA ISSO PRIMEIRO antes de qualquer ação.**
 
 ### Tarefas Prioritárias (por ordem):
-- [ ] 1. **Testes E2E do Painel Master Admin:** Validar Tenants, Planos, Addons e Impersonação em produção (ligare.app).
-- [ ] 2. **Billing Global:** Tela `/master-admin/billing` com histórico de todas as faturas Asaas consolidadas, visão de MRR por período e inadimplências.
-- [ ] 3. **Sincronização Asaas:** Ao criar/editar plano no painel, espelhar automaticamente na API Asaas gerando `asaas_plan_id`.
-- [ ] 4. **Soft-locks:** Alertas de quota atingida nos dashboards das igrejas (sem bloqueio abrupto — upsell amigável).
-- [ ] 5. **Testing WhatsApp (Hello Paco):** Fluxo E2E do QR Code e provisionamento de instâncias WAHA.
+- [ ] 1. **Testing WhatsApp (Hello Paco):** Fluxo E2E do QR Code e provisionamento de instâncias WAHA e debug final.
+- [ ] 2. **Sincronização Billing Asaas:** Finalizar integração da webhooks e cobranças recorrente atreladas ao Master Admin.
+- [ ] 3. **Página de Relatórios e Soft-locks:** Implementar os locks de limitação de cadastros vs quantidade do plano.
